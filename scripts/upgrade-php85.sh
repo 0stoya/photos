@@ -91,7 +91,6 @@ required_packages=(
   php8.5-apcu
   php8.5-redis
   php8.5-imagick
-  php8.5-opcache
 )
 
 section "PHP 8.5 package availability"
@@ -135,6 +134,9 @@ for module in "${required_modules[@]}"; do
   printf '%-14s OK\n' "$module"
 done
 
+/usr/bin/php8.5 -r 'exit(function_exists("opcache_get_status") ? 0 : 1);'   || fail "PHP 8.5 built-in OPcache is unavailable."
+echo "Zend OPcache   OK (built into PHP 8.5)"
+
 section "PHP 8.5 tuning"
 install -d -m 0755 "$(dirname "$NEW_FPM_INI")" "$(dirname "$NEW_CLI_INI")"
 
@@ -168,6 +170,10 @@ systemctl enable --now "$NEW_FPM_SERVICE"
 systemctl restart "$NEW_FPM_SERVICE"
 systemctl is-active --quiet "$NEW_FPM_SERVICE" || fail "$NEW_FPM_SERVICE is not active."
 [[ -S "$NEW_SOCKET" ]] || fail "PHP 8.5 FPM socket is missing: $NEW_SOCKET."
+
+[[ "$(/usr/bin/php8.5 -r 'echo ini_get("opcache.enable");')" == "1" ]]   || fail "PHP 8.5 OPcache is not enabled."
+[[ "$(/usr/bin/php8.5 -r 'echo ini_get("opcache.enable_cli");')" == "1" ]]   || fail "PHP 8.5 OPcache is not enabled for CLI validation."
+echo "PHP 8.5 OPcache: enabled"
 
 section "Validate Nextcloud on PHP 8.5 before web cutover"
 occ85 status --output=json | grep -q '"installed":true' || fail "Nextcloud does not run correctly under PHP 8.5 CLI."
