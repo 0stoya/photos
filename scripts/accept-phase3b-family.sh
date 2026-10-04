@@ -41,10 +41,19 @@ pass "family group exists"
   || fail "Memories is not the first default app."
 pass "Memories remains the first post-login app"
 
-[[ "$(occ config:app:get core shareapi_allow_links)" == "yes" ]] \
-  || fail "Public link sharing is not enabled."
-[[ "$(occ config:app:get core shareapi_enforce_links_password)" == "yes" ]] \
-  || fail "Public link password protection is not enforced."
+ALLOW_LINKS="$(occ config:app:get core shareapi_allow_links)"
+ENFORCE_PASSWORD="$(occ config:app:get core shareapi_enforce_links_password)"
+
+case "${ALLOW_LINKS,,}" in
+  yes|true|1) ;;
+  *) fail "Public link sharing is not enabled; stored value is: $ALLOW_LINKS" ;;
+esac
+
+case "${ENFORCE_PASSWORD,,}" in
+  yes|true|1) ;;
+  *) fail "Public link password protection is not enforced; stored value is: $ENFORCE_PASSWORD" ;;
+esac
+
 pass "Public share links require passwords"
 
 PUBLIC_STATUS="$(curl -fsS --max-time 20 "https://$DOMAIN/status.php")"
