@@ -47,9 +47,27 @@ HTTP_CODE="$(http_code --resolve "$DOMAIN:80:127.0.0.1" "http://$DOMAIN/")"
 [[ "$HTTP_CODE" == "301" ]] || fail "HTTP did not redirect to HTTPS; got $HTTP_CODE."
 pass "HTTP redirects to HTTPS"
 
-HSTS="$(curl -fsSI --resolve "$DOMAIN:443:127.0.0.1" "https://$DOMAIN/" | tr -d '\r' | awk 'BEGIN{IGNORECASE=1} /^strict-transport-security:/ {print; exit}')"
+ROOT_HEADERS="$(curl -fsSI --resolve "$DOMAIN:443:127.0.0.1" "https://$DOMAIN/" | tr -d '\r')"
+
+HSTS="$(awk 'BEGIN{IGNORECASE=1} /^strict-transport-security:/ {print; exit}' <<<"$ROOT_HEADERS")"
 [[ "$HSTS" == *"max-age=15552000"* ]] || fail "Expected HSTS header was not found."
 pass "HSTS is enabled"
+
+for expected in   'referrer-policy: no-referrer'   'x-content-type-options: nosniff'   'x-frame-options: SAMEORIGIN'   'x-permitted-cross-domain-policies: none'   'x-robots-tag: noindex, nofollow'; do
+  grep -Fiqx "$expected" <<<"$ROOT_HEADERS"     || fail "Missing expected security header: $expected"
+done
+pass "Dynamic responses include the Nextcloud security header set"
+
+MJS_FILE="$(find "$NC_ROOT" -type f -name '*.mjs' -print -quit)"
+[[ -n "$MJS_FILE" ]] || fail "Could not find a Nextcloud .mjs asset for MIME validation."
+MJS_PATH="${MJS_FILE#"$NC_ROOT"}"
+MJS_HEADERS="$(curl -fsSI --resolve "$DOMAIN:443:127.0.0.1" "https://$DOMAIN$MJS_PATH" | tr -d '\r')"
+MJS_TYPE="$(awk 'BEGIN{IGNORECASE=1} /^content-type:/ {print tolower($0); exit}' <<<"$MJS_HEADERS")"
+[[ "$MJS_TYPE" == *"text/javascript"* || "$MJS_TYPE" == *"application/javascript"* ]]   || fail ".mjs asset has an invalid Content-Type: $MJS_TYPE"
+for expected in   'referrer-policy: no-referrer'   'x-content-type-options: nosniff'   'x-frame-options: SAMEORIGIN'   'x-permitted-cross-domain-policies: none'   'x-robots-tag: noindex, nofollow'; do
+  grep -Fiqx "$expected" <<<"$MJS_HEADERS"     || fail "Static .mjs response is missing security header: $expected"
+done
+pass "Static .mjs assets use JavaScript MIME type and security headers"
 
 SENSITIVE_CODE="$(http_code --resolve "$DOMAIN:443:127.0.0.1" "https://$DOMAIN/config/config.php")"
 [[ "$SENSITIVE_CODE" == "404" ]] || fail "Sensitive config path returned $SENSITIVE_CODE instead of 404."
