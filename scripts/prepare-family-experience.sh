@@ -63,6 +63,11 @@ occ config:system:set defaultapp --value="memories,files"
 section "Password-protected public sharing"
 occ config:app:set core shareapi_allow_links --value="yes"
 occ config:app:set core shareapi_enforce_links_password --value="yes"
+
+ALLOW_LINKS="$(occ config:app:get core shareapi_allow_links)"
+ENFORCE_PASSWORD="$(occ config:app:get core shareapi_enforce_links_password)"
+echo "shareapi_allow_links=$ALLOW_LINKS"
+echo "shareapi_enforce_links_password=$ENFORCE_PASSWORD"
 echo "Public link sharing is enabled and password protection is enforced."
 
 section "Staging boundary"
