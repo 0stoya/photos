@@ -9,6 +9,7 @@ NC_CONFIG="/etc/nextcloud"
 PRIVATE_DIR="/etc/linetty-photos"
 PHP_VERSION="8.3"
 PHP_FPM_SERVICE="php8.3-fpm.service"
+PHP_FPM_POOL="/etc/php/${PHP_VERSION}/fpm/pool.d/www.conf"
 DB_NAME="nextcloud"
 DB_USER="nextcloud"
 DB_PASS_FILE="${PRIVATE_DIR}/postgres-nextcloud-password"
@@ -41,7 +42,7 @@ occ() {
 [[ "${ID:-}" == "ubuntu" ]] || fail "Ubuntu is required."
 [[ "${VERSION_ID:-}" == "24.04" ]] || fail "This phase is pinned to Ubuntu 24.04; found ${PRETTY_NAME:-unknown}."
 
-for cmd in nginx php psql redis-cli ffmpeg ffprobe convert curl tar sha256sum openssl runuser systemctl swapon mkswap; do
+for cmd in nginx php php-fpm8.3 psql redis-cli ffmpeg ffprobe convert curl tar sha256sum openssl runuser systemctl swapon mkswap; do
   require_command "$cmd"
 done
 
@@ -140,6 +141,15 @@ apc.enable_cli = 1
 INI
 
 cp "$PHP_FPM_INI" "$PHP_CLI_INI"
+
+[[ -f "$PHP_FPM_POOL" ]] || fail "PHP-FPM pool config is missing: $PHP_FPM_POOL."
+if grep -Eq '^[[:space:]]*env\[NEXTCLOUD_CONFIG_DIR\][[:space:]]*=' "$PHP_FPM_POOL"; then
+  sed -i -E "s#^[[:space:]]*env\[NEXTCLOUD_CONFIG_DIR\][[:space:]]*=.*#env[NEXTCLOUD_CONFIG_DIR] = $NC_CONFIG#" "$PHP_FPM_POOL"
+else
+  printf '\n; Linetty Photos external Nextcloud config\nenv[NEXTCLOUD_CONFIG_DIR] = %s\n' "$NC_CONFIG" >> "$PHP_FPM_POOL"
+fi
+
+php-fpm8.3 -t
 systemctl restart "$PHP_FPM_SERVICE"
 systemctl is-active --quiet "$PHP_FPM_SERVICE" || fail "$PHP_FPM_SERVICE failed after PHP tuning."
 
