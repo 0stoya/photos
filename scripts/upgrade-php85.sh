@@ -234,5 +234,5 @@ echo
 echo "PHP cutover complete."
 echo "Production FPM: $NEW_FPM_SERVICE"
 echo "Production socket: $NEW_SOCKET"
-echo "CLI: $(php -v | head -n 1)"
+echo "CLI: PHP $(php -r 'echo PHP_VERSION;')"
 echo "PHP 8.3 packages remain installed for rollback, but php8.3-fpm is disabled."
