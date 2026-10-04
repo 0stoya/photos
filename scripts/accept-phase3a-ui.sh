@@ -24,13 +24,16 @@ occ() {
 echo "LINETTY PHOTOS - PHASE 3A LOGIN/UI ACCEPTANCE"
 echo "============================================="
 
-[[ "$(occ theming:config name)" == "Linetty Photos" ]]   || fail "Instance name is not Linetty Photos."
+[[ "$(occ config:app:get theming name)" == "Linetty Photos" ]] \
+  || fail "Instance name is not Linetty Photos."
 pass "Instance is branded Linetty Photos"
 
-[[ "$(occ theming:config url)" == "https://photo.linetty.co.uk" ]]   || fail "Instance URL is not photo.linetty.co.uk."
+[[ "$(occ config:app:get theming url)" == "https://photo.linetty.co.uk" ]] \
+  || fail "Instance URL is not photo.linetty.co.uk."
 pass "Theme URL points to photo.linetty.co.uk"
 
-[[ "$(occ theming:config slogan)" == "Our family photos, in one place." ]]   || fail "Unexpected instance slogan."
+[[ "$(occ config:app:get theming slogan)" == "Our family photos, in one place." ]] \
+  || fail "Unexpected instance slogan."
 pass "Family photo slogan is configured"
 
 DEFAULTAPP="$(occ config:system:get defaultapp)"
@@ -48,8 +51,11 @@ PUBLIC_STATUS="$(curl -fsS --max-time 20 "https://$DOMAIN/status.php")"
 grep -q '"installed":true' <<<"$PUBLIC_STATUS" || fail "Public Nextcloud status is unhealthy."
 pass "Public HTTPS remains healthy"
 
-if find /etc/systemd/system /etc/cron.d -maxdepth 2 -type f   \( -iname '*linetty*backup*' -o -iname '*nextcloud*backup*' -o -iname '*photos*backup*' \)   -print -quit | grep -q .; then
-  fail "A Linetty/Nextcloud backup unit or cron file exists on staging."
+BACKUP_AUTOMATION="$(find /etc/systemd/system /etc/cron.d -maxdepth 2 -type f \
+  \( -iname '*linetty*backup*' -o -iname '*nextcloud*backup*' -o -iname '*photos*backup*' \) \
+  -print -quit 2>/dev/null || true)"
+if [[ -n "$BACKUP_AUTOMATION" ]]; then
+  fail "A Linetty/Nextcloud backup unit or cron file exists on staging: $BACKUP_AUTOMATION"
 fi
 pass "No Linetty/Nextcloud backup automation is installed on staging"
 
