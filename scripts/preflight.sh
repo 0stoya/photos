@@ -21,18 +21,21 @@ version_or_missing() {
 }
 
 service_status() {
-  local unit="$1"
+  local label="$1"
+  local unit="$2"
+  local load_state
   local active="absent"
   local enabled="absent"
 
-  if systemctl list-unit-files "$unit" --no-legend 2>/dev/null | grep -q .; then
+  load_state="$(systemctl show "$unit" -p LoadState --value 2>/dev/null || true)"
+  if [[ "$load_state" == "loaded" ]]; then
     active="$(systemctl is-active "$unit" 2>/dev/null || true)"
     enabled="$(systemctl is-enabled "$unit" 2>/dev/null || true)"
     [[ -n "$active" ]] || active="unknown"
     [[ -n "$enabled" ]] || enabled="unknown"
   fi
 
-  printf '%-18s active=%-12s enabled=%s\n' "$unit" "$active" "$enabled"
+  printf '%-18s active=%-12s enabled=%s\n' "$label" "$active" "$enabled"
 }
 
 echo "LINETTY PHOTOS - NATIVE UBUNTU HOST PREFLIGHT"
@@ -43,6 +46,8 @@ section "Operating system"
 if [[ -r /etc/os-release ]]; then
   . /etc/os-release
   echo "OS: ${PRETTY_NAME:-unknown}"
+  echo "ID: ${ID:-unknown}"
+  echo "VERSION_ID: ${VERSION_ID:-unknown}"
 else
   echo "OS: unknown"
 fi
@@ -115,14 +120,14 @@ fi
 
 section "Service state"
 if command -v systemctl >/dev/null 2>&1; then
-  service_status nginx
-  service_status postgresql
-  service_status redis-server
-  service_status redis
+  service_status nginx nginx.service
+  service_status postgresql postgresql.service
+  service_status redis-server redis-server.service
+  service_status redis redis.service
 
   while IFS= read -r unit; do
     [[ -z "$unit" ]] && continue
-    service_status "$unit"
+    service_status "$unit" "$unit"
   done < <(systemctl list-unit-files 'php*-fpm.service' --no-legend 2>/dev/null | awk '{print $1}')
 else
   echo "systemctl unavailable"
@@ -130,7 +135,12 @@ fi
 
 section "DNS"
 if command -v getent >/dev/null 2>&1; then
-  getent ahosts "$DOMAIN" | awk '!seen[$1]++ {print}' || true
+  dns_output="$(getent ahosts "$DOMAIN" 2>/dev/null | awk '!seen[$1]++ {print}')"
+  if [[ -n "$dns_output" ]]; then
+    printf '%s\n' "$dns_output"
+  else
+    echo "$DOMAIN: UNRESOLVED"
+  fi
 else
   echo "getent unavailable"
 fi
