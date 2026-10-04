@@ -1,6 +1,6 @@
 # Linetty Photos
 
-Private family photo and video hosting for **https://photos.linetty.co.uk**.
+Private family photo and video hosting for **https://photo.linetty.co.uk**.
 
 This repository contains the deployment configuration and operational tooling for a native Ubuntu installation. Media files, database contents, credentials, TLS keys and other private data must never be committed here.
 
@@ -22,7 +22,7 @@ No Docker.
 ## Goals
 
 1. Automatic iPhone photo and video uploads through the official Nextcloud iOS app.
-2. A family-friendly Memories timeline and albums at `photos.linetty.co.uk`.
+2. A family-friendly Memories timeline and albums at `photo.linetty.co.uk`.
 3. Password-protected share links with optional downloads and expiry.
 4. Original media stored outside the web root.
 5. Reliable database + media backups.

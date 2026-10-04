@@ -1,0 +1,36 @@
+# Secrets
+.env
+.env.*
+!.env.example
+*.key
+*.pem
+*.p12
+*.pfx
+config.php
+
+# Nextcloud/private runtime data
+data/
+media/
+previews/
+backups/
+dumps/
+*.sql
+*.sql.gz
+*.dump
+
+# Certificates
+certs/
+letsencrypt/
+
+# Local/runtime output
+*.log
+*.pid
+*.sock
+tmp/
+.cache/
+
+# Editors / OS
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
