@@ -55,6 +55,10 @@ for module in apcu bz2 curl dom exif fileinfo gd gmp imagick intl mbstring opens
 done
 pass "Required and recommended PHP 8.5 modules are loaded"
 
+"$PHP85" -r 'exit(function_exists("opcache_get_status") ? 0 : 1);'   || fail "PHP 8.5 built-in OPcache is unavailable."
+[[ "$("$PHP85" -r 'echo ini_get("opcache.enable");')" == "1" ]]   || fail "PHP 8.5 OPcache is not enabled."
+pass "PHP 8.5 built-in OPcache is available and enabled"
+
 [[ "$("$PHP85" -r 'echo ini_get("memory_limit");')" == "512M" ]]   || fail "PHP 8.5 memory_limit is not 512M."
 [[ "$("$PHP85" -r 'echo ini_get("upload_max_filesize");')" == "20G" ]]   || fail "PHP 8.5 upload_max_filesize is not 20G."
 [[ "$("$PHP85" -r 'echo ini_get("post_max_size");')" == "20G" ]]   || fail "PHP 8.5 post_max_size is not 20G."
