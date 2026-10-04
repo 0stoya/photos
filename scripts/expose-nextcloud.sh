@@ -6,6 +6,8 @@ NC_ROOT="/var/www/nextcloud"
 NC_CONFIG="/etc/nextcloud"
 PHP_FPM_SOCKET="/run/php/php8.5-fpm.sock"
 PHP_FPM_POOL="/etc/php/8.5/fpm/pool.d/www.conf"
+PHP_FPM_OVERRIDE_DIR="/etc/systemd/system/php8.5-fpm.service.d"
+PHP_FPM_OVERRIDE_FILE="${PHP_FPM_OVERRIDE_DIR}/linetty-nextcloud.conf"
 SITE_AVAILABLE="/etc/nginx/sites-available/linetty-photos"
 SITE_ENABLED="/etc/nginx/sites-enabled/linetty-photos"
 ACME_ROOT="/var/www/certbot"
@@ -32,6 +34,14 @@ systemctl is-active --quiet nginx.service || fail "nginx.service is not active."
 systemctl is-active --quiet php8.5-fpm.service || fail "php8.5-fpm.service is not active."
 
 section "PHP-FPM external config"
+install -d -m 0755 "$PHP_FPM_OVERRIDE_DIR"
+cat > "$PHP_FPM_OVERRIDE_FILE" <<SYSTEMD
+[Service]
+ReadWritePaths=$NC_CONFIG
+SYSTEMD
+chmod 0644 "$PHP_FPM_OVERRIDE_FILE"
+systemctl daemon-reload
+
 [[ -f "$PHP_FPM_POOL" ]] || fail "PHP-FPM pool config is missing: $PHP_FPM_POOL."
 if grep -Eq '^[[:space:]]*env\[NEXTCLOUD_CONFIG_DIR\][[:space:]]*=' "$PHP_FPM_POOL"; then
   sed -i -E "s#^[[:space:]]*env\[NEXTCLOUD_CONFIG_DIR\][[:space:]]*=.*#env[NEXTCLOUD_CONFIG_DIR] = $NC_CONFIG#" "$PHP_FPM_POOL"
