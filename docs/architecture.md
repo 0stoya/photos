@@ -2,7 +2,7 @@
 
 ## Purpose
 
-`photos.linetty.co.uk` is a private family photo and video service.
+`photo.linetty.co.uk` is a private family photo and video service.
 
 The service must support:
 
@@ -114,6 +114,6 @@ Before any package installation or service changes:
 1. inspect the Ubuntu release and hardware;
 2. inspect existing Nginx/PHP/PostgreSQL/Redis services;
 3. inspect storage capacity and mount layout;
-4. confirm DNS for `photos.linetty.co.uk`;
+4. confirm DNS for `photo.linetty.co.uk`;
 5. choose exact application/data/backup paths;
 6. only then create an idempotent installation/deployment script.
