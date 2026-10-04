@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -u
 
-DOMAIN="photos.linetty.co.uk"
+DOMAIN="photo.linetty.co.uk"
 
 section() {
   printf '\n==> %s\n' "$1"
