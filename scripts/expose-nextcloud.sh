@@ -4,8 +4,10 @@ set -Eeuo pipefail
 DOMAIN="photo.linetty.co.uk"
 NC_ROOT="/var/www/nextcloud"
 NC_CONFIG="/etc/nextcloud"
-PHP_FPM_SOCKET="/run/php/php8.3-fpm.sock"
-PHP_FPM_POOL="/etc/php/8.3/fpm/pool.d/www.conf"
+PHP_FPM_SOCKET="/run/php/php8.5-fpm.sock"
+PHP_FPM_POOL="/etc/php/8.5/fpm/pool.d/www.conf"
+PHP_FPM_OVERRIDE_DIR="/etc/systemd/system/php8.5-fpm.service.d"
+PHP_FPM_OVERRIDE_FILE="${PHP_FPM_OVERRIDE_DIR}/linetty-nextcloud.conf"
 SITE_AVAILABLE="/etc/nginx/sites-available/linetty-photos"
 SITE_ENABLED="/etc/nginx/sites-enabled/linetty-photos"
 ACME_ROOT="/var/www/certbot"
@@ -21,7 +23,7 @@ section() {
 }
 
 occ() {
-  runuser -u www-data -- env NEXTCLOUD_CONFIG_DIR="$NC_CONFIG" /usr/bin/php "$NC_ROOT/occ" "$@"
+  runuser -u www-data -- env NEXTCLOUD_CONFIG_DIR="$NC_CONFIG" /usr/bin/php8.5 "$NC_ROOT/occ" "$@"
 }
 
 [[ "${EUID}" -eq 0 ]] || fail "Run this script as root."
@@ -29,18 +31,26 @@ occ() {
 [[ -f "$NC_CONFIG/config.php" ]] || fail "Nextcloud config.php is missing from $NC_CONFIG."
 [[ -S "$PHP_FPM_SOCKET" ]] || fail "PHP-FPM socket is missing: $PHP_FPM_SOCKET."
 systemctl is-active --quiet nginx.service || fail "nginx.service is not active."
-systemctl is-active --quiet php8.3-fpm.service || fail "php8.3-fpm.service is not active."
+systemctl is-active --quiet php8.5-fpm.service || fail "php8.5-fpm.service is not active."
 
 section "PHP-FPM external config"
+install -d -m 0755 "$PHP_FPM_OVERRIDE_DIR"
+cat > "$PHP_FPM_OVERRIDE_FILE" <<SYSTEMD
+[Service]
+ReadWritePaths=$NC_CONFIG
+SYSTEMD
+chmod 0644 "$PHP_FPM_OVERRIDE_FILE"
+systemctl daemon-reload
+
 [[ -f "$PHP_FPM_POOL" ]] || fail "PHP-FPM pool config is missing: $PHP_FPM_POOL."
 if grep -Eq '^[[:space:]]*env\[NEXTCLOUD_CONFIG_DIR\][[:space:]]*=' "$PHP_FPM_POOL"; then
   sed -i -E "s#^[[:space:]]*env\[NEXTCLOUD_CONFIG_DIR\][[:space:]]*=.*#env[NEXTCLOUD_CONFIG_DIR] = $NC_CONFIG#" "$PHP_FPM_POOL"
 else
   printf '\n; Linetty Photos external Nextcloud config\nenv[NEXTCLOUD_CONFIG_DIR] = %s\n' "$NC_CONFIG" >> "$PHP_FPM_POOL"
 fi
-php-fpm8.3 -t
-systemctl restart php8.3-fpm.service
-systemctl is-active --quiet php8.3-fpm.service || fail "PHP-FPM failed after config environment update."
+php-fpm8.5 -t
+systemctl restart php8.5-fpm.service
+systemctl is-active --quiet php8.5-fpm.service || fail "PHP-FPM failed after config environment update."
 
 section "DNS"
 A_RECORDS="$(getent ahostsv4 "$DOMAIN" 2>/dev/null | awk '{print $1}' | sort -u || true)"

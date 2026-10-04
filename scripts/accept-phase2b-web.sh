@@ -16,7 +16,7 @@ pass() {
 }
 
 occ() {
-  runuser -u www-data -- env NEXTCLOUD_CONFIG_DIR="$NC_CONFIG" /usr/bin/php "$NC_ROOT/occ" "$@"
+  runuser -u www-data -- env NEXTCLOUD_CONFIG_DIR="$NC_CONFIG" /usr/bin/php8.5 "$NC_ROOT/occ" "$@"
 }
 
 http_code() {
@@ -32,7 +32,7 @@ nginx -t >/dev/null 2>&1 || fail "nginx -t failed."
 pass "Nginx configuration is valid"
 
 systemctl is-active --quiet nginx.service || fail "Nginx is not active."
-systemctl is-active --quiet php8.3-fpm.service || fail "PHP-FPM is not active."
+systemctl is-active --quiet php8.5-fpm.service || fail "PHP-FPM is not active."
 pass "Nginx and PHP-FPM are active"
 
 [[ -r "$CERT_DIR/fullchain.pem" ]] || fail "TLS certificate is missing."
