@@ -14,7 +14,7 @@ The upgrade:
 2. adds the PHP PPA only if it is not already configured;
 3. verifies an APT candidate exists for every required PHP 8.5 package;
 4. installs PHP 8.5 alongside 8.3;
-5. validates required/recommended modules before switching web traffic;
+5. validates required/recommended modules before switching web traffic, including PHP 8.5's built-in OPcache;
 6. reproduces the 20 GiB upload and 512 MiB memory tuning;
 7. configures the external `NEXTCLOUD_CONFIG_DIR` for PHP 8.5 FPM;
 8. validates Nextcloud and Memories with PHP 8.5 CLI;
@@ -60,3 +60,7 @@ The rollback restores the exact pre-cutover Nginx site and cron files from:
 ```
 
 Do not purge PHP 8.3 until PHP 8.5 has been accepted under normal family use.
+
+## PHP 8.5 OPcache packaging
+
+PHP 8.5 makes OPcache a non-optional, statically built part of PHP. There is therefore no separate `php8.5-opcache` package to install. The cutover validates OPcache at runtime instead.
