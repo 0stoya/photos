@@ -9,13 +9,30 @@ section() {
 
 version_or_missing() {
   local label="$1"
-  shift
+  local command_name="$2"
+  shift 2
+
   printf '%-18s ' "$label"
-  if command -v "$1" >/dev/null 2>&1; then
-    "$@" 2>&1 | head -n 1
+  if command -v "$command_name" >/dev/null 2>&1; then
+    "$command_name" "$@" 2>&1 | head -n 1
   else
     echo "MISSING"
   fi
+}
+
+service_status() {
+  local unit="$1"
+  local active="absent"
+  local enabled="absent"
+
+  if systemctl list-unit-files "$unit" --no-legend 2>/dev/null | grep -q .; then
+    active="$(systemctl is-active "$unit" 2>/dev/null || true)"
+    enabled="$(systemctl is-enabled "$unit" 2>/dev/null || true)"
+    [[ -n "$active" ]] || active="unknown"
+    [[ -n "$enabled" ]] || enabled="unknown"
+  fi
+
+  printf '%-18s active=%-12s enabled=%s\n' "$unit" "$active" "$enabled"
 }
 
 echo "LINETTY PHOTOS - NATIVE UBUNTU HOST PREFLIGHT"
@@ -55,13 +72,13 @@ if command -v findmnt >/dev/null 2>&1; then
 fi
 
 section "Runtime versions"
-version_or_missing "nginx" nginx nginx -v
-version_or_missing "php" php php -v
-version_or_missing "psql" psql psql --version
-version_or_missing "redis-server" redis-server redis-server --version
-version_or_missing "ffmpeg" ffmpeg ffmpeg -version
-version_or_missing "ffprobe" ffprobe ffprobe -version
-version_or_missing "imagemagick" convert convert -version
+version_or_missing "nginx" nginx -v
+version_or_missing "php" php -v
+version_or_missing "psql" psql --version
+version_or_missing "redis-server" redis-server --version
+version_or_missing "ffmpeg" ffmpeg -version
+version_or_missing "ffprobe" ffprobe -version
+version_or_missing "imagemagick" convert -version
 
 section "PHP modules"
 if command -v php >/dev/null 2>&1; then
@@ -98,19 +115,14 @@ fi
 
 section "Service state"
 if command -v systemctl >/dev/null 2>&1; then
-  for unit in nginx postgresql redis-server redis; do
-    printf '%-18s active=' "$unit"
-    systemctl is-active "$unit" 2>/dev/null || printf 'unknown'
-    printf ' enabled='
-    systemctl is-enabled "$unit" 2>/dev/null || printf 'unknown'
-    echo
-  done
+  service_status nginx
+  service_status postgresql
+  service_status redis-server
+  service_status redis
 
   while IFS= read -r unit; do
     [[ -z "$unit" ]] && continue
-    printf '%-28s active=' "$unit"
-    systemctl is-active "$unit" 2>/dev/null || printf 'unknown'
-    echo
+    service_status "$unit"
   done < <(systemctl list-unit-files 'php*-fpm.service' --no-legend 2>/dev/null | awk '{print $1}')
 else
   echo "systemctl unavailable"
