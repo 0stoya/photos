@@ -187,9 +187,21 @@ server {
     ssl_stapling_verify off;
 
     add_header Strict-Transport-Security "max-age=15552000" always;
+    add_header Referrer-Policy "no-referrer" always;
+    add_header X-Content-Type-Options "nosniff" always;
+    add_header X-Frame-Options "SAMEORIGIN" always;
+    add_header X-Permitted-Cross-Domain-Policies "none" always;
+    add_header X-Robots-Tag "noindex, nofollow" always;
+
+    include mime.types;
+    types {
+        text/javascript mjs;
+        application/wasm wasm;
+    }
 
     client_max_body_size 20G;
     client_body_timeout 3600s;
+    client_body_buffer_size 512k;
 
     location = /robots.txt {
         allow all;
@@ -238,6 +250,7 @@ server {
         fastcgi_param HTTP_HOST \$host;
 
         fastcgi_intercept_errors on;
+        fastcgi_hide_header X-Powered-By;
         fastcgi_request_buffering on;
         fastcgi_read_timeout 3600s;
         fastcgi_send_timeout 3600s;
@@ -245,9 +258,15 @@ server {
         fastcgi_max_temp_file_size 0;
     }
 
-    location ~ \.(?:css|js|mjs|svg|gif|png|jpg|jpeg|ico|wasm|tflite|map|ogg|flac)\$ {
+    location ~ \.(?:css|js|mjs|svg|gif|png|jpg|jpeg|webp|ico|wasm|tflite|map|ogg|flac|mp4|webm)\$ {
         try_files \$uri /index.php\$request_uri;
         add_header Cache-Control "public, max-age=15778463\$linetty_asset_immutable";
+        add_header Strict-Transport-Security "max-age=15552000" always;
+        add_header Referrer-Policy "no-referrer" always;
+        add_header X-Content-Type-Options "nosniff" always;
+        add_header X-Frame-Options "SAMEORIGIN" always;
+        add_header X-Permitted-Cross-Domain-Policies "none" always;
+        add_header X-Robots-Tag "noindex, nofollow" always;
         access_log off;
     }
 
