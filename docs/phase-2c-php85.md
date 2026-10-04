@@ -64,3 +64,23 @@ Do not purge PHP 8.3 until PHP 8.5 has been accepted under normal family use.
 ## PHP 8.5 OPcache packaging
 
 PHP 8.5 makes OPcache a non-optional, statically built part of PHP. There is therefore no separate `php8.5-opcache` package to install. The cutover validates OPcache at runtime instead.
+
+
+## PHP-FPM systemd hardening
+
+Current Sury PHP-FPM packages harden the service with `ProtectSystem=full`, which makes `/etc` read-only inside the FPM service namespace.
+
+Linetty Photos intentionally keeps the live Nextcloud config at `/etc/nextcloud`, so Phase 2C installs a narrow systemd override:
+
+```ini
+[Service]
+ReadWritePaths=/etc/nextcloud
+```
+
+This preserves the PHP-FPM hardening for the rest of `/etc` while allowing Nextcloud to update its own external configuration.
+
+The override is stored at:
+
+```text
+/etc/systemd/system/php8.5-fpm.service.d/linetty-nextcloud.conf
+```
