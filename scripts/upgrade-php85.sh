@@ -175,6 +175,16 @@ systemctl is-active --quiet "$NEW_FPM_SERVICE" || fail "$NEW_FPM_SERVICE is not 
 [[ "$(/usr/bin/php8.5 -r 'echo ini_get("opcache.enable_cli");')" == "1" ]]   || fail "PHP 8.5 OPcache is not enabled for CLI validation."
 echo "PHP 8.5 OPcache: enabled"
 
+section "Nextcloud config permissions"
+chown www-data:www-data "$NC_CONFIG"
+chmod 0750 "$NC_CONFIG"
+find "$NC_CONFIG" -maxdepth 1 -type f -exec chown www-data:www-data {} +
+find "$NC_CONFIG" -maxdepth 1 -type f -exec chmod 0640 {} +
+
+runuser -u www-data -- test -w "$NC_CONFIG"   || fail "$NC_CONFIG is not writable by www-data."
+runuser -u www-data -- test -w "$NC_CONFIG/config.php"   || fail "$NC_CONFIG/config.php is not writable by www-data."
+echo "Nextcloud external config is writable by www-data"
+
 section "Validate Nextcloud on PHP 8.5 before web cutover"
 occ85 status --output=json | grep -q '"installed":true' || fail "Nextcloud does not run correctly under PHP 8.5 CLI."
 occ85 app:getpath memories >/dev/null 2>&1 || fail "Memories does not load under PHP 8.5."
@@ -215,6 +225,9 @@ chmod 0644 "$CRON_FILE"
 chown root:root "$CRON_FILE"
 
 section "Web validation"
+systemctl restart "$NEW_FPM_SERVICE"
+systemctl is-active --quiet "$NEW_FPM_SERVICE" || fail "$NEW_FPM_SERVICE failed before web validation."
+
 LOCAL_STATUS="$(curl -fsS --resolve "$DOMAIN:443:127.0.0.1" "https://$DOMAIN/status.php")"
 grep -q '"installed":true' <<<"$LOCAL_STATUS" || {
   cp -a "$BACKUP_DIR/nginx-site.before-php85" "$SITE_FILE"
