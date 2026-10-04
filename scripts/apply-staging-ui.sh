@@ -83,9 +83,9 @@ else
 fi
 
 section "Acceptance preview"
-echo "Name:       $(occ theming:config name)"
-echo "Slogan:     $(occ theming:config slogan)"
-echo "URL:        $(occ theming:config url)"
+echo "Name:       $(occ config:app:get theming name)"
+echo "Slogan:     $(occ config:app:get theming slogan)"
+echo "URL:        $(occ config:app:get theming url)"
 echo "Defaultapp: $(occ config:system:get defaultapp)"
 echo
 echo "Staging UI configuration applied."
