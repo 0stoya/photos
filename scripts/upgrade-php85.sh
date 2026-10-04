@@ -96,7 +96,7 @@ required_packages=(
 
 section "PHP 8.5 package availability"
 for pkg in "${required_packages[@]}"; do
-  candidate="$(apt-cache policy "$pkg" | awk '/Candidate:/ {print $2; exit}')"
+  candidate="$(apt-cache policy "$pkg" | awk '/Candidate:/ {candidate=$2} END {print candidate}')"
   [[ -n "$candidate" && "$candidate" != "(none)" ]] || fail "No install candidate for $pkg."
   printf '%-22s %s\n' "$pkg" "$candidate"
 done
