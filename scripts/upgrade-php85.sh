@@ -15,6 +15,8 @@ NEW_SOCKET="/run/php/php8.5-fpm.sock"
 NEW_POOL="/etc/php/8.5/fpm/pool.d/www.conf"
 NEW_FPM_INI="/etc/php/8.5/fpm/conf.d/99-linetty-photos.ini"
 NEW_CLI_INI="/etc/php/8.5/cli/conf.d/99-linetty-photos.ini"
+FPM_OVERRIDE_DIR="/etc/systemd/system/php8.5-fpm.service.d"
+FPM_OVERRIDE_FILE="${FPM_OVERRIDE_DIR}/linetty-nextcloud.conf"
 BACKUP_DIR="/etc/linetty-photos/php85-cutover"
 
 fail() {
@@ -136,6 +138,15 @@ done
 
 /usr/bin/php8.5 -r 'exit(function_exists("opcache_get_status") ? 0 : 1);'   || fail "PHP 8.5 built-in OPcache is unavailable."
 echo "Zend OPcache   OK (built into PHP 8.5)"
+
+section "PHP 8.5 systemd write boundary"
+install -d -m 0755 "$FPM_OVERRIDE_DIR"
+cat > "$FPM_OVERRIDE_FILE" <<SYSTEMD
+[Service]
+ReadWritePaths=$NC_CONFIG
+SYSTEMD
+chmod 0644 "$FPM_OVERRIDE_FILE"
+systemctl daemon-reload
 
 section "PHP 8.5 tuning"
 install -d -m 0755 "$(dirname "$NEW_FPM_INI")" "$(dirname "$NEW_CLI_INI")"
