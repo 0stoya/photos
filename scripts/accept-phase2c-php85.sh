@@ -41,6 +41,11 @@ systemctl is-enabled --quiet "$FPM_SERVICE" || fail "$FPM_SERVICE is not enabled
 [[ -S "$FPM_SOCKET" ]] || fail "PHP 8.5 FPM socket is missing."
 pass "PHP 8.5 FPM is active and enabled"
 
+[[ "$(stat -c '%U:%G' "$NC_CONFIG")" == "www-data:www-data" ]]   || fail "External Nextcloud config directory is not owned by www-data:www-data."
+runuser -u www-data -- test -w "$NC_CONFIG"   || fail "External Nextcloud config directory is not writable by www-data."
+runuser -u www-data -- test -w "$NC_CONFIG/config.php"   || fail "External Nextcloud config.php is not writable by www-data."
+pass "External Nextcloud config is writable by PHP-FPM user"
+
 grep -Fq "$FPM_SOCKET" "$SITE_FILE" || fail "Nginx does not use the PHP 8.5 socket."
 ! grep -Fq '/run/php/php8.3-fpm.sock' "$SITE_FILE" || fail "Nginx still references PHP 8.3."
 nginx -t >/dev/null 2>&1 || fail "Nginx configuration is invalid."
