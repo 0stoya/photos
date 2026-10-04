@@ -21,11 +21,13 @@ Production host facts:
 6. redirects HTTP to HTTPS while preserving the ACME challenge path;
 7. uses the exact local PHP 8.3 Unix socket;
 8. allows request bodies up to 20 GiB and long-running upload requests;
-9. denies direct requests to Nextcloud private/internal paths;
-10. configures WebDAV well-known redirects;
-11. enables a six-month HSTS policy;
-12. pins Nextcloud's canonical host/protocol to HTTPS;
-13. runs local and public web acceptance checks.
+9. explicitly serves `.mjs` as JavaScript and `.wasm` as WebAssembly;
+10. enforces Nextcloud's recommended security headers on dynamic and static responses;
+11. denies direct requests to Nextcloud private/internal paths;
+12. configures WebDAV well-known redirects;
+13. enables a six-month HSTS policy;
+14. pins Nextcloud's canonical host/protocol to HTTPS;
+15. runs local and public web acceptance checks.
 
 OCSP stapling is deliberately disabled because current Nextcloud guidance notes that Let's Encrypt has ended OCSP support.
 
@@ -75,6 +77,8 @@ Acceptance checks:
 - local TLS/SNI path serves healthy Nextcloud;
 - port 80 redirects to HTTPS;
 - HSTS header present;
+- recommended security headers present on dynamic and static assets;
+- `.mjs` assets are served with a JavaScript MIME type;
 - direct access to `/config/config.php` is blocked;
 - CardDAV well-known redirect works;
 - public IPv4 HTTPS works;
