@@ -35,7 +35,7 @@ occ85() {
 . /etc/os-release
 [[ "${ID:-}" == "ubuntu" && "${VERSION_ID:-}" == "24.04" ]]   || fail "This upgrade is pinned to Ubuntu 24.04."
 
-for cmd in nginx php psql redis-cli curl add-apt-repository apt-get update-alternatives runuser systemctl; do
+for cmd in nginx php psql redis-cli curl apt-get apt-cache update-alternatives runuser systemctl; do
   command -v "$cmd" >/dev/null 2>&1 || fail "Required command is missing: $cmd"
 done
 
@@ -64,6 +64,7 @@ trap cleanup_maintenance EXIT
 section "Repository"
 apt-get update
 DEBIAN_FRONTEND=noninteractive apt-get install -y software-properties-common ca-certificates apt-transport-https
+command -v add-apt-repository >/dev/null 2>&1 || fail "add-apt-repository is unavailable after installing software-properties-common."
 
 if ! grep -RqsE '(^|[[:space:]])ppa\.launchpadcontent\.net/ondrej/php/ubuntu|(^|[[:space:]])ppa\.launchpad\.net/ondrej/php/ubuntu'   /etc/apt/sources.list /etc/apt/sources.list.d 2>/dev/null; then
   LC_ALL=C.UTF-8 add-apt-repository -y ppa:ondrej/php
