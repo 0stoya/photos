@@ -23,7 +23,7 @@ Paste the complete output into the deployment review.
 - presence and versions of Nginx, PHP, PostgreSQL, Redis, ffmpeg and ffprobe;
 - PHP extensions required by Nextcloud/Memories;
 - relevant service states;
-- DNS resolution for `photos.linetty.co.uk`.
+- DNS resolution for `photo.linetty.co.uk`.
 
 ## Acceptance
 
